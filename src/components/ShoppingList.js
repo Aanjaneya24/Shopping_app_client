@@ -8,16 +8,27 @@ import PropTypes from 'prop-types';
 
 
 class ShoppingList extends Component {
+  static propTypes = {
+   getItems: PropTypes.func.isRequired,
+   item: PropTypes.object.isRequired,
+   isAuthenticated: PropTypes.bool.isRequired
+  };
   
   componentDidMount(){
     this.props.getItems();
   }
   onDeleteClick=(id)=>{
+    console.log('Deleting item with ID:', id);
+    if (!id) {
+      console.error('Invalid item ID');
+      return;
+    }
     this.props.deleteItem(id);
   }
   render() {
     const { items } = this.props.item;
-
+    console.log('Items:', items); // Check what items contains
+    
     return (
       <Container>
         {/* Add Item Button */}
@@ -26,7 +37,7 @@ class ShoppingList extends Component {
         {/* Items List */}
         <ListGroup>
           <TransitionGroup className="shopping-list">
-            {items.map(({ _id, name }) => {
+            {Array.isArray(items) && items.map(({ _id, name }) => {
               const nodeRef = createRef(); // ✅ Fix findDOMNode issue
               return (
                 <CSSTransition
@@ -37,14 +48,16 @@ class ShoppingList extends Component {
                 >
                   <ListGroupItem ref={nodeRef} className="d-flex justify-content-between align-items-center">
                     {name}
-                    <Button
-                      className="remove-btn"
-                      color="danger"
-                      size="sm"
-                      onClick={this.onDeleteClick.bind(this, _id)}
-                    >
-                      &times;
-                    </Button>
+                    {this.props.isAuthenticated ? (
+                      <Button
+                        className="remove-btn"
+                        color="danger"
+                        size="sm"
+                        onClick={this.onDeleteClick.bind(this, _id)}
+                      >
+                        &times;
+                      </Button>
+                    ):null}
                   </ListGroupItem>
                 </CSSTransition>
               );
@@ -55,14 +68,10 @@ class ShoppingList extends Component {
     );
   }
 }
-
-ShoppingList.propTypes = {
-  getItems: PropTypes.func.isRequired,
-  item: PropTypes.object.isRequired
-};
-
+  
 const mapStateToProps = (state) => ({
-  item: state.item
+  item: state.item,
+  isAuthenticated: state.auth.isAuthenticated
 });
 
 export default connect(mapStateToProps, { getItems, deleteItem, addItem })(ShoppingList);
